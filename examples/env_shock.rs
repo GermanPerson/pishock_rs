@@ -20,6 +20,7 @@ async fn main() {
     println!("Shock duration (PISHOCK_DURATION): {shock_duration}");
     println!("Shocker share code (PISHOCK_SHARECODE): {shocker_share_code}");
     println!("Shocker API key (PISHOCK_APIKEY): {shocker_api_key}");
+    println!("Shocker API username (PISHOCK_USERNAME): {shocker_api_username}");
 
     if shocker_share_code.is_empty() || shocker_api_key.is_empty() || shocker_api_username.is_empty() {
         error!("PISHOCK_SHARECODE, PISHOCK_APIKEY and PISHOCK_USERNAME must be set");
