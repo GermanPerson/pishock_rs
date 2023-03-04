@@ -1,0 +1,27 @@
+[package]
+name = "pishock_rs"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+keywords = ["pishock"]
+categories = ["api-bindings"]
+description = "Rust library for the PiShock API"
+repository = "https://github.com/GermanPerson/pishock_rs"
+readme = "README.md"
+authors = ["GermanPerson", "N3ptune"]
+documentation = "https://docs.rs/pishock_rs"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+thiserror = "1.0.38"
+serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.93"
+tokio-test = "0.4.2"
+log = "0.4.17"
+
+[dev-dependencies]
+simplelog = "0.12.1"
