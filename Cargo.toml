@@ -25,3 +25,6 @@ log = "0.4.17"
 
 [dev-dependencies]
 simplelog = "0.12.1"
+httpmock = "0.6.7"
+test-log = "0.2.11"
+env_logger = "0.10.0"

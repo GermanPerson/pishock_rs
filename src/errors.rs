@@ -17,7 +17,7 @@ pub enum PiShockError {
     InvalidOpCode(u32),
     #[error("Invalid intensity specified, max intensity: {}", .0)]
     InvalidIntensity(u32),
-    #[error("Invalid duration specified: {}", .0)]
+    #[error("Invalid duration specified, max duration: {}", .0)]
     InvalidDuration(u32),
     #[error("Connection error: {}", .0)]
     ConnectionError(String),
@@ -27,20 +27,45 @@ pub enum PiShockError {
 
 /// Converts possible HTTP responses to the respective `PiShock` errors
 /// This list is NOT exhaustive, the skipped errors are handled by the `PiShock` functions and should not ever be sent by the API
-pub(crate) fn error_to_pishock_error<S: Into<String> + Clone>(error: S) -> Result<(), PiShockError> {
-    debug!("Resolving body text to PiShockError: {}", error.clone().into());
+pub(crate) fn error_to_pishock_error<S: Into<String> + Clone>(
+    error: S,
+) -> Result<(), PiShockError> {
+    debug!(
+        "Resolving body text to PiShockError: {}",
+        error.clone().into()
+    );
 
-    if error.clone().into().contains("Intensity must be between 0 and ") {
-        return Err(PiShockError::InvalidIntensity(error.into().split(' ').last().unwrap().parse().unwrap()));
+    if error
+        .clone()
+        .into()
+        .contains("Intensity must be between 0 and ")
+    {
+        return Err(PiShockError::InvalidIntensity(
+            error.into().split(' ').last().unwrap().parse().unwrap(),
+        ));
+    }
+
+    if error
+        .clone()
+        .into()
+        .contains("Duration must be between 1 and ")
+    {
+        return Err(PiShockError::InvalidDuration(
+            error.into().split(' ').last().unwrap().parse().unwrap(),
+        ));
     }
 
     match error.clone().into().as_ref() {
         "Operation Succeeded." => Ok(()),
-        "Share code not found" | "This code doesn’t exist." => Err(PiShockError::ShareCodeNotFound),
+        "Share code not found" | "This code doesn’t exist." => {
+            Err(PiShockError::ShareCodeNotFound)
+        }
         "Not Authorized." => Err(PiShockError::InvalidCredentials),
         "Shocker is Paused, unable to send command." => Err(PiShockError::ShockerPaused),
         "Device currently not connected." => Err(PiShockError::ShockerOffline),
-        "This share code has already been used by somebody else." => Err(PiShockError::ShareCodeInUse),
+        "This share code has already been used by somebody else." => {
+            Err(PiShockError::ShareCodeInUse)
+        }
         _ => Err(PiShockError::UnknownError(error.into())),
     }
 }
