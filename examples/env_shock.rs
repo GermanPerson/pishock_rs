@@ -39,15 +39,15 @@ async fn main() {
         exit(1);
     }
 
-    // Create a new PiShockController instance
-    let pishock_controller = pishock_rs::PiShockController::new(
+    // Create a new PiShockAccount instance
+    let pishock_account = pishock_rs::PiShockAccount::new(
         "pishock_rs example".to_string(),
         shocker_api_username,
         shocker_api_key,
     );
 
     // Get a PiShocker instance
-    let pishocker_instance = match pishock_controller
+    let pishocker_instance = match pishock_account
         .get_shocker(shocker_share_code, false)
         .await
     {

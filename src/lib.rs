@@ -6,31 +6,35 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-/// The main controller for the PiShock API.
+/// A struct representing a PiShock account credentials.
+/// Should be used to create [`PiShocker`] instances.
 ///
-/// Construct a new instance with [`PiShockController::new`].
-pub struct PiShockController {
+/// Construct a new instance with [`PiShockAccount::new`].
+pub struct PiShockAccount {
     app_name: String,
     api_username: String,
     api_key: String,
 }
 
-impl PiShockController {
+impl PiShockAccount {
     #[must_use]
-    pub fn new<S: Into<String>>(api_name: S, api_username: S, api_key: S) -> PiShockController {
-        PiShockController {
+    pub fn new<S: Into<String>>(api_name: S, api_username: S, api_key: S) -> PiShockAccount {
+        PiShockAccount {
             app_name: api_name.into(),
             api_username: api_username.into(),
             api_key: api_key.into(),
         }
     }
 
-    /// Returns a `PiShocker` instance for the specified share code
+    /// Returns a [`PiShocker`] instance for the specified share code
     ///
     /// Warning: This function will vibrate the shocker softly for one second if `verify_connection` is true
     /// ```
-    /// # use pishock_rs::PiShockController;
-    ///  let pishock_controller = PiShockController::new("pishock_rs", "username", "apikey");
+    /// # tokio_test::block_on(async {
+    /// # use pishock_rs::PiShockAccount;
+    /// let pishock_account = PiShockAccount::new("pishock_rs", "username", "apikey");
+    /// let pishocker_instance = pishock_account.get_shocker("sharecode", true).await;
+    /// # });
     /// ```
     /// # Errors
     /// Will only return an error if `verify_connection` is true and an error occurs while trying to vibrate the shocker
@@ -64,7 +68,7 @@ enum PiShockOpCode {
 
 static PUBLIC_PISHOCK_API_URL: &str = "https://do.pishock.com/api/apioperate/";
 
-/// Represents a single PiShocker device. This struct should not be constructed directly, use [`PiShockController::get_shocker`] instead.
+/// Represents a single PiShocker device. This struct should not be constructed directly, use [`PiShockAccount::get_shocker`] instead.
 #[derive(Debug, Clone)]
 pub struct PiShocker {
     share_code: String,
@@ -77,7 +81,7 @@ pub struct PiShocker {
 
 impl PiShocker {
     /// Creates a new `PiShocker` instance.
-    /// This function should not be called directly, use [`PiShockController::get_shocker`] instead.
+    /// This function should not be called directly, use [`PiShockAccount::get_shocker`] instead.
     #[must_use]
     pub fn new<S: Into<String>>(
         share_code: S,
@@ -113,11 +117,11 @@ impl PiShocker {
     /// # tokio_test::block_on(async {
     /// use std::time::Duration;
     /// use pishock_rs::PiShocker;
-    /// use pishock_rs::PiShockController;
+    /// use pishock_rs::PiShockAccount;
     ///
-    /// let pishock_controller = PiShockController::new("pishock_rs", "username", "apikey");
+    /// let pishock_account = PiShockAccount::new("pishock_rs", "username", "apikey");
     ///
-    /// let pishocker_instance = pishock_controller.get_shocker("sharecode".to_string(), true).await.unwrap();
+    /// let pishocker_instance = pishock_account.get_shocker("sharecode".to_string(), true).await.unwrap();
     ///
     /// // Beeps for 10 seconds
     /// pishocker_instance.beep(Duration::from_secs(10)).await.expect("Failed to beep");
@@ -137,11 +141,11 @@ impl PiShocker {
     /// # tokio_test::block_on(async {
     /// use std::time::Duration;
     /// use pishock_rs::PiShocker;
-    /// use pishock_rs::PiShockController;
+    /// use pishock_rs::PiShockAccount;
     ///
-    /// let pishock_controller = PiShockController::new("pishock_rs", "username", "apikey");
+    /// let pishock_account = PiShockAccount::new("pishock_rs", "username", "apikey");
     ///
-    /// let pishocker_instance = pishock_controller.get_shocker("sharecode".to_string(), true).await.unwrap();
+    /// let pishocker_instance = pishock_account.get_shocker("sharecode".to_string(), true).await.unwrap();
     ///
     /// // Shock the user with an intensity of 50 and a duration of 10 seconds
     /// pishocker_instance.vibrate(50, Duration::from_secs(10)).await.expect("Failed to vibrate");
@@ -204,10 +208,10 @@ impl PiShocker {
     /// # tokio_test::block_on(async {
     /// use std::time::Duration;
     /// use pishock_rs::PiShocker;
-    /// use pishock_rs::PiShockController;
+    /// use pishock_rs::PiShockAccount;
     ///
-    /// let pishock_controller = PiShockController::new("pishock_rs", "username", "apikey");
-    /// let pishocker_instance = pishock_controller.get_shocker("sharecode".to_string(), true).await.unwrap();
+    /// let pishock_account = PiShockAccount::new("pishock_rs", "username", "apikey");
+    /// let pishocker_instance = pishock_account.get_shocker("sharecode".to_string(), true).await.unwrap();
     ///
     /// // Shock the user with an intensity of 50 and a duration of 2 seconds
     /// pishocker_instance.shock_with_warning(50, Duration::from_secs(2)).await.expect("Failed to shock user");
@@ -304,7 +308,7 @@ impl PiShocker {
 
 #[cfg(test)]
 mod tests {
-    use crate::{PiShockController, PiShockOpCode};
+    use crate::{PiShockAccount, PiShockOpCode};
     use httpmock::Method::POST;
     use httpmock::{Mock, MockServer};
     use serde_json::json;
@@ -335,10 +339,10 @@ mod tests {
                 async fn $name() {
                     let mockserver = httpmock::MockServer::start();
 
-                    let pishock_controller = PiShockController::new("pishock_rs", "username", "apikey");
+                    let pishock_account = PiShockAccount::new("pishock_rs", "username", "apikey");
 
                     // Get a PiShocker instance without verification (we can't set the API server URL to the mock server URL yet)
-                    let mut pishocker_instance = pishock_controller.get_shocker("sharecode".to_string(), false).await.unwrap();
+                    let mut pishocker_instance = pishock_account.get_shocker("sharecode".to_string(), false).await.unwrap();
 
                     // Set the API server URL to the mock server URL
                     pishocker_instance.set_api_server_url(mockserver.url(""));

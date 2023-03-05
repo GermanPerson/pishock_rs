@@ -16,8 +16,10 @@ pub enum PiShockError {
     #[error("Invalid OP code specified: {}", .0)]
     InvalidOpCode(u32),
     #[error("Invalid intensity specified, max intensity: {}", .0)]
+    /// The maximum intensity the shocker can deploy
     InvalidIntensity(u32),
     #[error("Invalid duration specified, max duration: {}", .0)]
+    /// The maximum duration the shocker can deploy
     InvalidDuration(u32),
     #[error("Connection error: {}", .0)]
     ConnectionError(String),
