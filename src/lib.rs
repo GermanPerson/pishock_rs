@@ -6,7 +6,7 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-/// A struct representing a PiShock account credentials.
+/// A struct representing PiShock account credentials.
 /// Should be used to create [`PiShocker`] instances.
 ///
 /// Construct a new instance with [`PiShockAccount::new`].
