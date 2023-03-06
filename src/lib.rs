@@ -10,6 +10,7 @@ use std::time::Duration;
 /// Should be used to create [`PiShocker`] instances.
 ///
 /// Construct a new instance with [`PiShockAccount::new`].
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PiShockAccount {
     app_name: String,
     api_username: String,
