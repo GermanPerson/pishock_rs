@@ -23,6 +23,8 @@ pub enum PiShockError {
     InvalidDuration(u32),
     #[error("Connection error: {}", .0)]
     ConnectionError(String),
+    #[error("Shocker is busy")]
+    ShockerBusy,
     #[error("Unknown error: {}", .0)]
     UnknownError(String),
 }
@@ -59,6 +61,7 @@ pub(crate) fn error_to_pishock_error<S: Into<String> + Clone>(
 
     match error.clone().into().as_ref() {
         "Operation Succeeded." => Ok(()),
+        "Device in Use." => Err(PiShockError::ShockerBusy),
         "Share code not found" | "This code doesn’t exist." => {
             Err(PiShockError::ShareCodeNotFound)
         }

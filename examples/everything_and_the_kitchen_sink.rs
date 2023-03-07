@@ -1,11 +1,13 @@
 extern crate pishock_rs;
 
-use log::error;
+use log::{error, info, log};
 use pishock_rs::errors::PiShockError;
+use pishock_rs::PiShocker;
 use simplelog::{Config, LevelFilter, TerminalMode};
 use std::io::Write;
 use std::process::exit;
 use std::time::Duration;
+use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() {
@@ -47,7 +49,8 @@ async fn main() {
     );
 
     // Get a PiShocker instance
-    let pishocker_instance = match pishock_account.get_shocker(shocker_share_code).await {
+    let pishocker_instance: PiShocker = match pishock_account.get_shocker(shocker_share_code).await
+    {
         Ok(pishock_instance) => pishock_instance,
         Err(e) => {
             error!("Failed to get PiShocker instance: {e}");
@@ -55,46 +58,27 @@ async fn main() {
         }
     };
 
+    // Print all the PiShocker's details
+    println!("PiShocker details:");
+    println!("  Name: {}", pishocker_instance.get_shocker_name().unwrap());
     println!(
-        "Shocker name: {}",
-        pishocker_instance.get_shocker_name().unwrap()
+        "  Max intensity: {}",
+        pishocker_instance.get_max_intensity().unwrap()
     );
-
-    println!("Waiting 3 seconds before shocking!");
-    println!("Press Ctrl+C to cancel... ");
-
-    print!("3... ");
-    std::io::stdout().flush().unwrap();
-    tokio::time::sleep(Duration::from_secs(1)).await;
-    print!("2... ");
-    std::io::stdout().flush().unwrap();
-    tokio::time::sleep(Duration::from_secs(1)).await;
-    print!("1... ");
-    std::io::stdout().flush().unwrap();
-    tokio::time::sleep(Duration::from_secs(1)).await;
-    println!("SHOCK!");
-    std::io::stdout().flush().unwrap();
-
-    // Shock the user with given intensity and duration
-    match pishocker_instance
-        .shock_with_warning(
-            shock_intensity.parse::<u32>().unwrap(),
-            Duration::from_secs(shock_duration.parse::<u64>().unwrap()),
-        )
-        .await
-    {
-        Ok(_) => println!(
-            "Shock to {} successfully sent!",
-            pishocker_instance.get_shocker_name().unwrap()
-        ),
-        Err(e) => match e {
-            PiShockError::InvalidIntensity(max_intensity) => {
-                error!("Invalid intensity specified, max intensity: {max_intensity}");
-            }
-            PiShockError::InvalidDuration(duration) => {
-                error!("Invalid duration specified, max duration: {duration}");
-            }
-            _ => error!("Shock failed: {e}"),
-        },
-    }
+    println!(
+        "  Max duration: {:#?}",
+        pishocker_instance.get_max_duration().unwrap()
+    );
+    println!(
+        "  Client ID: {}",
+        pishocker_instance.get_client_id().unwrap()
+    );
+    println!(
+        "  Online: {}",
+        pishocker_instance.get_shocker_online().unwrap()
+    );
+    println!(
+        "  Paused: {}",
+        pishocker_instance.get_shocker_paused().unwrap()
+    );
 }
