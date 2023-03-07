@@ -8,6 +8,7 @@ use std::io::Write;
 use std::process::exit;
 use std::time::Duration;
 use tokio::time::sleep;
+use pishock_rs::interpolation::ShockPoint;
 
 #[tokio::main]
 async fn main() {
@@ -21,14 +22,10 @@ async fn main() {
 
     println!("Simple example of using the PiShock API - env variable control");
 
-    let shock_intensity = std::env::var("PISHOCK_INTENSITY").unwrap_or("20".to_string());
-    let shock_duration = std::env::var("PISHOCK_DURATION").unwrap_or("1".to_string());
     let shocker_share_code = std::env::var("PISHOCK_SHARECODE").unwrap_or(String::new());
     let shocker_api_key = std::env::var("PISHOCK_APIKEY").unwrap_or(String::new());
     let shocker_api_username = std::env::var("PISHOCK_USERNAME").unwrap_or(String::new());
 
-    println!("Shock intensity (PISHOCK_INTENSITY): {shock_intensity}");
-    println!("Shock duration (PISHOCK_DURATION): {shock_duration}");
     println!("Shocker share code (PISHOCK_SHARECODE): {shocker_share_code}");
     println!("Shocker API key (PISHOCK_APIKEY): {shocker_api_key}");
     println!("Shocker API username (PISHOCK_USERNAME): {shocker_api_username}");
@@ -47,6 +44,13 @@ async fn main() {
         shocker_api_username,
         shocker_api_key,
     );
+
+    let test_pishocker_instance = pishock_account.get_shocker_without_verification(shocker_share_code.clone()).await.unwrap();
+    test_pishocker_instance.shock_curve(vec![
+        ShockPoint::new(Duration::default(), 1),
+        ShockPoint::new(Duration::from_secs(3), 100),
+        ShockPoint::new(Duration::from_secs(6), 1),
+    ]).await.unwrap();
 
     // Get a PiShocker instance
     let pishocker_instance: PiShocker = match pishock_account.get_shocker(shocker_share_code).await
