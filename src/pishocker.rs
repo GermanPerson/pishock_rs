@@ -5,6 +5,10 @@ use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
+// This is imported for the doc comments
+#[allow(unused_imports)]
+use crate::PiShockAccount;
+
 /// Represents a single [`PiShocker`] device. This struct should not be constructed directly, use [`PiShockAccount::get_shocker`] instead.
 #[derive(Debug, Clone)]
 pub struct PiShocker {

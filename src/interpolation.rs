@@ -21,7 +21,7 @@ impl ShockPoint {
 
 // The distance in ms between each point in the interpolated curve
 // Setting this too low *will* cause DeviceBusy errors
-static INTERPOLATION_RESOLUTION: u32 = 1000;
+static INTERPOLATION_RESOLUTION: u32 = 500;
 
 impl PiShocker {
 
