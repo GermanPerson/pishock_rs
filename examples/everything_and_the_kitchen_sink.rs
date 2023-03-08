@@ -47,9 +47,11 @@ async fn main() {
 
     let test_pishocker_instance = pishock_account.get_shocker_without_verification(shocker_share_code.clone()).await.unwrap();
     test_pishocker_instance.shock_curve(vec![
-        ShockPoint::new(Duration::default(), 1),
-        ShockPoint::new(Duration::from_secs(3), 100),
-        ShockPoint::new(Duration::from_secs(6), 1),
+        ShockPoint::new(Duration::from_secs(2), 100),
+        ShockPoint::new(Duration::from_secs(3), 30),
+        ShockPoint::new(Duration::from_secs(1), 1),
+        ShockPoint::new(Duration::from_secs(3), 90),
+        ShockPoint::new(Duration::from_secs(4), 1),
     ]).await.unwrap();
 
     // Get a PiShocker instance

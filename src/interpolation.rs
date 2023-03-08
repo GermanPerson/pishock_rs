@@ -1,5 +1,6 @@
 use std::time::Duration;
-use log::debug;
+use log::{debug, info};
+use textplots::{Chart, Plot, Shape};
 use crate::errors::PiShockError;
 use crate::PiShocker;
 
@@ -38,11 +39,10 @@ impl PiShocker {
         }
 
         let total_length : Duration = points.iter().map(|point| point.duration).sum();
+        debug!("Total length of raw curve: {:#?}", total_length);
 
         // Calculate an interpolated curve
         let mut interpolated_curve: Vec<ShockPoint> = Vec::new();
-
-        let current_time = Duration::default();
 
         // Generate a Vec with shock points that are interpolated between the given points
         for point in points {
@@ -62,8 +62,21 @@ impl PiShocker {
             }
         }
 
+        {
+            let shape = Shape::Continuous(Box::new(|x| {
+                interpolated_curve.clone().get(x as usize).map(|point| point.intensity as f32).unwrap_or(0.0)
+            }));
+
+            let mut chart = Chart::new(180, 60, 0 as f32, interpolated_curve.len() as f32);
+            let chart_line = chart.lineplot(&shape);
+
+            info!("Shock step graph - 1 step = {}ms\n{}", INTERPOLATION_RESOLUTION, chart_line.to_string());
+        }
+
         #[cfg(debug_assertions)]
         debug!("Interpolated curve: {:#?}", interpolated_curve);
+
+        debug!("Total length of interpolated curve: {:#?}", interpolated_curve.iter().map(|point| point.duration).sum::<Duration>());
 
         for point in interpolated_curve {
             debug!("Sending shock at intensity {} for duration {:#?}", point.intensity, point.duration);
@@ -77,7 +90,8 @@ impl PiShocker {
 }
 
 fn linear_interpolation(start: u32, end: u32, time: u32, duration: u32) -> u32 {
-    // Convert to signed to allow for negative values
+    // Convert to signed to allow for negative values that will
+    // be present during downward trends
     let start = start as i32;
     let end = end as i32;
     let time = time as i32;
@@ -87,5 +101,6 @@ fn linear_interpolation(start: u32, end: u32, time: u32, duration: u32) -> u32 {
     debug!("Linear interpolation: start: {}, end: {}, time: {}, duration: {}", start, end, time, duration);
     debug!("Linear interpolation: {}", result);
 
-    result as u32
+    // The absolute intensity must always be a positive value
+    result.unsigned_abs()
 }
