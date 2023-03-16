@@ -5,6 +5,7 @@ use log::debug;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use tokio::time::Instant;
 
 #[derive(Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
 pub(crate) enum PiShockOpCode {
@@ -60,6 +61,9 @@ impl PiShocker {
             ));
         }
 
+        // Check shocker cooldown and return error if it is not over yet
+        self.verify_shocker_cooldown()?;
+
         // Check for too low intensity (the API does not accept intensities below 1)
         if intensity < 1 {
             return Err(errors::PiShockError::InvalidIntensity({
@@ -81,17 +85,7 @@ impl PiShocker {
             }));
         }
 
-        // The PiShock API requires the duration to be in milliseconds if it is below 1.5 seconds
-        // and in seconds if it is above 1.5 seconds.
-        // This function converts the duration to the correct format.
-        // If the duration is below 100 milliseconds, an error is returned (the API does not accept durations below 100 milliseconds).
-        let api_duration_number: u32 = if duration.as_millis() < 100 {
-            return Err(errors::PiShockError::InvalidDuration(1));
-        } else if duration.as_millis() < 1500 {
-            duration.as_millis() as u32
-        } else {
-            duration.as_secs() as u32
-        };
+        let api_duration_number: u32 = self.duration_to_pishock_api(duration);
 
         debug!("Sending request to PiShock API: {{ Op: {}, Intensity: {}, Duration: {}, Code: {}, Apikey: {} }}", op_code as u32, intensity, api_duration_number, self.share_code, self.api_key);
 
@@ -110,7 +104,7 @@ impl PiShocker {
             .send()
             .await;
 
-        return if let Ok(response) = http_response {
+        if let Ok(response) = http_response {
             debug!("Response from PiShock API: {}", response.status());
             let response_text = response.text().await;
             if let Ok(response_text) = response_text {
@@ -135,7 +129,7 @@ impl PiShocker {
                 "Failed to connect to {}",
                 self.api_server_url
             )))
-        };
+        }
     }
 
     /// Refreshes the metadata of the given `[PiShocker]` instance.
@@ -168,7 +162,7 @@ impl PiShocker {
             .send()
             .await;
 
-        return if let Ok(response) = http_response {
+        if let Ok(response) = http_response {
             debug!("Response from PiShock API: {}", response.status());
 
             if response.status() != StatusCode::OK {
@@ -199,7 +193,43 @@ impl PiShocker {
                 "Failed to connect to {}",
                 self.api_server_url.clone() + "/GetShockerInfo"
             )))
-        };
+        }
+    }
+
+    fn verify_shocker_cooldown(&self) -> Result<(), errors::PiShockError> {
+        // Lock the LastShock mutex
+        let mut last_shock = self.last_shock.lock().unwrap();
+
+        // Check that the shocker cooldown was not exceeded
+        // Do a song and dance to avoid the value being moved into the if statement
+        if let Some(last_shock) = last_shock.as_ref() {
+            if let Some(cooldown) = self.get_shocker_cooldown() {
+                if last_shock.elapsed() < cooldown {
+                    return Err(errors::PiShockError::CooldownExceeded({
+                        cooldown - last_shock.elapsed()
+                    }));
+                }
+            }
+        }
+
+        // Update the last shock time
+        *last_shock = Some(Instant::now());
+
+        // Unlock the LastShock mutex
+        drop(last_shock);
+
+        Ok(())
+    }
+
+    /// The PiShock API requires the duration to be in milliseconds if it is below 1.5 seconds and in seconds if it is above 1.5 seconds.
+    /// This function converts the duration to the correct format.
+    /// If the duration is below 100 milliseconds, an error is returned (the API does not accept durations below 100 milliseconds).
+    fn duration_to_pishock_api(&self, duration: Duration) -> u32 {
+        if duration.as_secs() > 0 {
+            duration.as_secs() as u32
+        } else {
+            duration.as_millis() as u32
+        }
     }
 }
 
@@ -293,7 +323,7 @@ mod tests {
 
     #[test(tokio::test)]
     async fn metadata_failed_request_unknown() {
-        let mockserver = httpmock::MockServer::start();
+        let mockserver = MockServer::start();
 
         let pishock_account = PiShockAccount::new("pishock_rs", "username", "apikey");
 

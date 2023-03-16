@@ -1,4 +1,5 @@
-use log::debug;
+use log::{debug, error};
+use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
@@ -27,6 +28,9 @@ pub enum PiShockError {
     ShockerBusy,
     #[error("Unknown error: {}", .0)]
     UnknownError(String),
+    #[error("Shock cooldown exceeded, {:#?} left", .0)]
+    /// If a shock is attempted while the cooldown is not over, this error is returned with the remaining cooldown time
+    CooldownExceeded(Duration),
 }
 
 /// Converts possible HTTP responses to the respective `PiShock` errors

@@ -1,14 +1,11 @@
 extern crate pishock_rs;
 
 use log::{error, info, log};
-use pishock_rs::errors::PiShockError;
+use pishock_rs::interpolation::ShockPoint;
 use pishock_rs::PiShocker;
 use simplelog::{Config, LevelFilter, TerminalMode};
-use std::io::Write;
 use std::process::exit;
 use std::time::Duration;
-use tokio::time::sleep;
-use pishock_rs::interpolation::ShockPoint;
 
 #[tokio::main]
 async fn main() {
@@ -45,14 +42,20 @@ async fn main() {
         shocker_api_key,
     );
 
-    let test_pishocker_instance = pishock_account.get_shocker_without_verification(shocker_share_code.clone()).await.unwrap();
-    test_pishocker_instance.shock_curve(vec![
-        ShockPoint::new(Duration::from_secs(2), 100),
-        ShockPoint::new(Duration::from_secs(3), 30),
-        ShockPoint::new(Duration::from_secs(1), 1),
-        ShockPoint::new(Duration::from_secs(3), 90),
-        ShockPoint::new(Duration::from_secs(4), 1),
-    ]).await.unwrap();
+    let test_pishocker_instance = pishock_account
+        .get_shocker_without_verification(shocker_share_code.clone())
+        .await
+        .unwrap();
+    test_pishocker_instance
+        .shock_curve(vec![
+            ShockPoint::new(Duration::from_secs(2), 100),
+            ShockPoint::new(Duration::from_secs(3), 30),
+            ShockPoint::new(Duration::from_secs(1), 1),
+            ShockPoint::new(Duration::from_secs(3), 90),
+            ShockPoint::new(Duration::from_secs(4), 1),
+        ])
+        .await
+        .unwrap();
 
     // Get a PiShocker instance
     let pishocker_instance: PiShocker = match pishock_account.get_shocker(shocker_share_code).await

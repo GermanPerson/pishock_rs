@@ -3,7 +3,9 @@ use crate::errors::PiShockError;
 use crate::{errors, PUBLIC_PISHOCK_API_BASE};
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use tokio::time::Instant;
 
 // This is imported for the doc comments
 #[allow(unused_imports)]
@@ -19,6 +21,8 @@ pub struct PiShocker {
     pub(crate) app_name: String,
     pub(crate) api_server_url: String,
     pub(crate) metadata: Option<PiShockerMetadata>,
+    pub(crate) cooldown: Option<Duration>,
+    pub(crate) last_shock: Arc<Mutex<Option<Instant>>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -51,6 +55,8 @@ impl PiShocker {
             app_name: app_name.into(),
             api_server_url: PUBLIC_PISHOCK_API_BASE.to_string(),
             metadata: None,
+            cooldown: None,
+            last_shock: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -134,11 +140,7 @@ impl PiShocker {
     /// </p>
     ///
     /// Refer to documentation of `shock_with_warning` for more information.
-    pub async fn shock(
-        &self,
-        intensity: u32,
-        duration: Duration,
-    ) -> Result<(), errors::PiShockError> {
+    pub async fn shock(&self, intensity: u32, duration: Duration) -> Result<(), PiShockError> {
         info!(
             "Shocking user with intensity {} and duration {} seconds",
             intensity,
@@ -186,6 +188,25 @@ impl PiShocker {
         Ok(())
     }
 
+    /// Set a cooldown for the shocker
+    ///
+    /// The cooldown is a duration that must pass before the shocker can be used again.
+    /// This is useful if you want to prevent the user from spamming the shocker.
+    ///
+    /// Excessive shocks result in a [`PiShockError::CooldownExceeded`] error.
+    /// ```no_run
+    /// # use std::time::Duration;
+    /// # use pishock_rs::PiShocker;
+    /// # use pishock_rs::PiShockAccount;
+    /// # tokio_test::block_on(async {
+    /// # let pishock_account = PiShockAccount::new("pishock_rs", "username", "apikey");
+    /// # let mut pishocker_instance = pishock_account.get_shocker("sharecode".to_string()).await.unwrap();
+    /// pishocker_instance.set_shocker_cooldown(Duration::from_millis(500));
+    /// # });
+    pub fn set_shocker_cooldown(&mut self, cooldown: Duration) {
+        self.cooldown = Some(cooldown);
+    }
+
     /// Returns the name of the shocker
     #[must_use]
     pub fn get_shocker_name(&self) -> Option<String> {
@@ -230,6 +251,12 @@ impl PiShocker {
     #[must_use]
     pub fn get_shocker_paused(&self) -> Option<bool> {
         self.metadata.as_ref().map(|metadata| metadata.paused)
+    }
+
+    /// Returns the cooldown of the shocker
+    #[must_use]
+    pub fn get_shocker_cooldown(&self) -> Option<Duration> {
+        self.cooldown
     }
 
     // Metadata-supported intensity and duration checks that are used by the internal API request function
