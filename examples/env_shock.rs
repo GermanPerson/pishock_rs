@@ -20,7 +20,11 @@ async fn main() {
     println!("Simple example of using the PiShock API - env variable control");
 
     let shock_intensity = std::env::var("PISHOCK_INTENSITY").unwrap_or("20".to_string());
+    let shock_intensity = shock_intensity.trim_end();
+
     let shock_duration = std::env::var("PISHOCK_DURATION").unwrap_or("1".to_string());
+    let shock_duration = shock_duration.trim_end();
+
     let shocker_share_code = std::env::var("PISHOCK_SHARECODE").unwrap_or(String::new());
     let shocker_api_key = std::env::var("PISHOCK_APIKEY").unwrap_or(String::new());
     let shocker_api_username = std::env::var("PISHOCK_USERNAME").unwrap_or(String::new());

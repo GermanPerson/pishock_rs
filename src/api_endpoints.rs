@@ -171,6 +171,7 @@ impl PiShocker {
 
             let response_metadata = response.json::<PiShockerMetadata>().await;
             if let Ok(response_text) = response_metadata {
+                debug!("Response from PiShock API: {:?}", response_text);
                 self.metadata = Some(response_text);
                 Ok(())
             } else {

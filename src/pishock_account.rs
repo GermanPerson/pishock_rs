@@ -1,3 +1,4 @@
+use log::debug;
 use crate::{errors, PiShocker};
 
 /// A struct representing PiShock account credentials.
@@ -41,9 +42,9 @@ impl PiShockAccount {
         // Fetch metadata of the shocker
         pishock_instance.refresh_metadata().await?;
 
-        // Check if the shocker is online
+        // Check if the shocker is offline
         if pishock_instance.get_shocker_online().is_some()
-            && pishock_instance.get_shocker_online().unwrap_or(false)
+            && !pishock_instance.get_shocker_online().unwrap_or(false)
         {
             return Err(errors::PiShockError::ShockerOffline);
         }
